@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Stor Gaming</title>
+
+<style>
+/* ===== CINEMATIC BACKGROUND ===== */
+body{
+  margin:0;
+  font-family:Tahoma,Arial;
+  color:#fff;
+  background:
+    radial-gradient(circle at 20% 20%, #1f1f1f, transparent 40%),
+    radial-gradient(circle at 80% 80%, #111, transparent 40%),
+    linear-gradient(120deg,#000,#0a0a0a,#000);
+  background-size:200% 200%;
+  animation:bgMove 12s infinite alternate;
+}
+@keyframes bgMove{
+  from{background-position:0% 0%}
+  to{background-position:100% 100%}
+}
+
+.app{
+  max-width:420px;
+  margin:auto;
+  padding:20px;
+}
+
+.logo{
+  text-align:center;
+  font-size:28px;
+  color:#ffd700;
+  text-shadow:0 0 20px gold;
+  margin-bottom:20px;
+}
+
+.btn{
+  width:100%;
+  padding:15px;
+  margin:10px 0;
+  border:none;
+  border-radius:14px;
+  font-weight:bold;
+  font-size:16px;
+  background:linear-gradient(145deg,#ffd700,#ffb300);
+  color:#000;
+  cursor:pointer;
+}
+.btn:active{transform:scale(.96)}
+
+.section{
+  background:#0e0e0e;
+  padding:15px;
+  border-radius:16px;
+  margin-top:20px;
+  box-shadow:0 0 25px #000 inset;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  margin-bottom:10px;
+}
+
+canvas{
+  display:block;
+  margin:10px auto;
+}
+
+.counter{
+  text-align:center;
+  margin-top:10px;
+}
+
+.gift{
+  display:none;
+  color:#ffd700;
+  text-align:center;
+  margin-top:10px;
+  font-size:18px;
+  text-shadow:0 0 15px gold;
+}
+
+.admin{
+  display:none;
+  background:#111;
+  padding:15px;
+  border-radius:15px;
+  margin-top:20px;
+  border:1px solid gold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<div class="logo">🎮 The Stor Gaming</div>
+
+<button class="btn" onclick="sell()">💰 بيع حسابات ببجي</button>
+<button class="btn" onclick="buy()">🛒 شراء حسابات ببجي</button>
+
+<div class="section">
+<h3>🎡 عجلة الحظ اليومية</h3>
+
+<input id="name" placeholder="الاسم">
+<input id="pid" placeholder="ID">
+
+<canvas id="wheel" width="260" height="260"></canvas>
+
+<button class="btn" onclick="spin()">لف العجلة</button>
+</div>
+
+<div class="section">
+<h3>📤 مشاركة الموقع</h3>
+<button class="btn" onclick="share()">شارك الآن</button>
+
+<div class="counter">
+المشاركات: <span id="shares">0</span> / 50
+</div>
+
+<div class="gift" id="gift">🎁 هديتك اليومية 660 UC</div>
+</div>
+
+<div class="admin" id="admin">
+<h3>🔐 Admin Panel</h3>
+<p>Users: <span id="a_users"></span></p>
+<p>Spins: <span id="a_spins"></span></p>
+<p>Shares: <span id="a_shares"></span></p>
+<button class="btn" onclick="resetAll()">Reset All</button>
+</div>
+
+<audio id="win">
+<source src="https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=الف+مبروك" type="audio/mpeg">
+</audio>
+
+</div>
+
+<script>
+/* ===== DATA ===== */
+let data = JSON.parse(localStorage.getItem("storData")) || {
+  users:1,
+  spins:0,
+  shares:0,
+  lastSpin:0
+};
+
+const prizes = [
+  {name:"❌ لا شيء", weight:70},
+  {name:"660 UC", weight:15},
+  {name:"6600 UC", weight:10},
+  {name:"2000 جنيه", weight:5}
+];
+
+if(data.shares >= 50){
+  prizes[0].weight = 40; // تحسين الحظ
+}
+
+/* ===== CANVAS WHEEL ===== */
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+let angle = 0;
+
+function drawWheel(){
+  let start = 0;
+  prizes.forEach(p=>{
+    let slice = p.weight / 100 * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(130,130);
+    ctx.arc(130,130,120,start,start+slice);
+    ctx.fillStyle = p.name==="❌ لا شيء" ? "#333":"#ffd700";
+    ctx.fill();
+    start += slice;
+  });
+}
+drawWheel();
+
+/* ===== ACTIONS ===== */
+function sell(){
+  location.href="https://wa.me/2001211056530?text=اريد%20بيع%20حساب%20ببجي";
+}
+function buy(){
+  location.href="https://wa.me/2001211056530?text=اريد%20شراء%20حساب%20ببجي";
+}
+
+function spin(){
+  let now = Date.now();
+  if(now - data.lastSpin < 86400000){
+    alert("لفة واحدة كل 24 ساعة");
+    return;
+  }
+  if(!name.value || !pid.value){
+    alert("ادخل الاسم و ID");
+    return;
+  }
+
+  data.lastSpin = now;
+  data.spins++;
+
+  let r = Math.random()*100;
+  let acc = 0, result="❌ لا شيء";
+  for(let p of prizes){
+    acc += p.weight;
+    if(r <= acc){ result=p.name; break;}
+  }
+
+  angle += 1440 + Math.random()*360;
+  canvas.style.transition="transform 4s ease-out";
+  canvas.style.transform=`rotate(${angle}deg)`;
+
+  setTimeout(()=>{
+    if(result!=="❌ لا شيء"){
+      win.play();
+      alert("🎉 "+result);
+    }else{
+      alert("لم يحالفك الحظ – تم التعويض");
+    }
+  },4000);
+
+  save();
+}
+
+function share(){
+  let now = Date.now();
+  if(data._cool && now - data._cool < 8000) return;
+  data._cool = now;
+
+  data.shares++;
+  if(data.shares >= 50){
+    gift.style.display="block";
+    win.play();
+  }
+  navigator.share
+    ? navigator.share({text:"The Stor Gaming 🔥",url:location.href})
+    : window.open("https://wa.me/?text=The%20Stor%20Gaming");
+  save();
+}
+
+/* ===== ADMIN ===== */
+if(location.hash==="#admin"){
+  admin.style.display="block";
+  a_users.textContent=data.users;
+  a_spins.textContent=data.spins;
+  a_shares.textContent=data.shares;
+}
+
+function resetAll(){
+  localStorage.clear();
+  location.reload();
+}
+
+function save(){
+  localStorage.setItem("storData",JSON.stringify(data));
+  shares.textContent=data.shares;
+}
+shares.textContent=data.shares;
+</script>
+
+</body>
+</html>
